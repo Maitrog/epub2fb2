@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Browser-based EPUB to FB2 converter that preserves the table of contents, cover, footnotes, text, and images."
+    />
+    <title>EPUB to FB2 Converter</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./" aria-label="EPUB to FB2">
+        <span class="brand-mark">E2F</span>
+        <span>EPUB2FB2</span>
+      </a>
+      <a class="header-link" href="#converter">Convert</a>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>EPUB to FB2 Converter</h1>
+          <p class="lead">
+            Convert EPUB to FB2 directly in your browser. Your file is never uploaded to a server, and the result preserves
+            text, the table of contents, cover, footnotes, and images.
+          </p>
+          <div class="proof-row" aria-label="Benefits">
+            <span>Offline-ready</span>
+            <span>FB2 Download</span>
+            <span>No Account Required</span>
+          </div>
+        </div>
+
+        <section class="steps" aria-label="How conversion works">
+          <article>
+            <span>1</span>
+            <h2>Upload EPUB</h2>
+            <p>Select a book in .epub format</p>
+          </article>
+          <article>
+            <span>2</span>
+            <h2>We Convert It</h2>
+            <p>We parse OPF, XHTML, TOC, footnotes, and images</p>
+          </article>
+          <article>
+            <span>3</span>
+            <h2>Download FB2</h2>
+            <p>Get a ready-to-read FB2 file</p>
+          </article>
+        </section>
+      </section>
+
+      <section id="converter" class="converter-shell">
+        <form class="converter-card" id="converter-form">
+          <fieldset>
+            <legend>Output options</legend>
+            <div class="segmented" role="radiogroup" aria-label="Image handling mode">
+              <label>
+                <input type="radio" name="images" value="inline" checked />
+                <span>Inline images<small>Insert images in the text</small></span>
+              </label>
+              <label>
+                <input type="radio" name="images" value="footnotes" />
+                <span>Image notes<small>Move images to footnotes</small></span>
+              </label>
+            </div>
+          </fieldset>
+
+          <label class="dropzone" id="dropzone">
+            <input id="file-input" type="file" accept=".epub,application/epub+zip" />
+            <span class="upload-icon">&uarr;</span>
+            <strong id="file-title">Click to select an EPUB file</strong>
+            <small id="file-subtitle">EPUB files processed locally in your browser</small>
+          </label>
+
+          <button class="primary-action" id="convert-button" type="submit">Convert to FB2</button>
+          <p class="status" id="status" role="status">Ready.</p>
+        </form>
+      </section>
+
+      <section class="details">
+        <div>
+          <h2>What is preserved</h2>
+          <p>
+            The converter carries over metadata, the cover, chapter order from the spine, NCX or EPUB 3 navigation, footnote
+            links, text formatting, and binary images.
+          </p>
+        </div>
+        <div>
+          <h2>Limitations</h2>
+          <p>
+            EPUB ZIP entries must be unencrypted. Compressed EPUB files use the browser DecompressionStream API; older
+            browsers may require Chrome, Edge, or a current Firefox version.
+          </p>
+        </div>
+      </section>
+
+      <section class="faq">
+        <h2>Frequently Asked Questions</h2>
+        <details open>
+          <summary>Is the file uploaded to a server?</summary>
+          <p>No. EPUB parsing and FB2 generation run in your browser on your device.</p>
+        </details>
+        <details>
+          <summary>How does Image notes mode work?</summary>
+          <p>Each image is replaced with a footnote link, and the image itself is placed in a separate notes section.</p>
+        </details>
+        <details>
+          <summary>Why does the table of contents remain usable?</summary>
+          <p>FB2 readers build the table of contents from nested section/title nodes. The app maps the EPUB TOC to the spine and creates that structure.</p>
+        </details>
+      </section>
+    </main>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
