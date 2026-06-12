@@ -58,10 +58,10 @@ const fileSubtitle = requireElement<HTMLElement>("#file-subtitle");
 const statusEl = requireElement<HTMLElement>("#status");
 const convertButton = requireElement<HTMLButtonElement>("#convert-button");
 
-let selectedFile: File | null = null;
+let selectedFiles: File[] = [];
 
 fileInput.addEventListener("change", () => {
-  setSelectedFile(fileInput.files?.[0] ?? null);
+  setSelectedFiles(filesFromList(fileInput.files));
 });
 
 dropzone.addEventListener("dragover", (event) => {
@@ -76,14 +76,14 @@ dropzone.addEventListener("dragleave", () => {
 dropzone.addEventListener("drop", (event) => {
   event.preventDefault();
   dropzone.classList.remove("is-dragover");
-  setSelectedFile(event.dataTransfer?.files?.[0] ?? null);
+  setSelectedFiles(filesFromList(event.dataTransfer?.files ?? null));
 });
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  if (!selectedFile) {
-    setStatus("Select an EPUB file.", "error");
+  if (selectedFiles.length === 0) {
+    setStatus("Select at least one EPUB file.", "error");
     return;
   }
 
@@ -92,11 +92,35 @@ form.addEventListener("submit", async (event) => {
 
   try {
     convertButton.disabled = true;
-    setStatus("Reading EPUB archive...");
-    const result = await convertEpubToFb2(selectedFile, imageMode);
-    downloadText(result.fileName, result.fb2, "application/x-fictionbook+xml;charset=utf-8");
+    const failures: string[] = [];
+    let convertedCount = 0;
+    let totalSections = 0;
+    let totalImages = 0;
+    let totalNotes = 0;
+
+    for (const [index, file] of selectedFiles.entries()) {
+      setStatus(`Converting ${index + 1} of ${selectedFiles.length}: ${file.name}...`);
+      try {
+        const result = await convertEpubToFb2(file, imageMode);
+        downloadText(result.fileName, result.fb2, "application/x-fictionbook+xml;charset=utf-8");
+        convertedCount += 1;
+        totalSections += result.stats.sections;
+        totalImages += result.stats.images;
+        totalNotes += result.stats.notes;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Conversion failed.";
+        failures.push(`${file.name}: ${message}`);
+      }
+    }
+
+    if (failures.length > 0) {
+      const convertedText = convertedCount > 0 ? `${convertedCount} converted. ` : "";
+      setStatus(`${convertedText}${failures.length} failed. ${failures.join(" ")}`, "error");
+      return;
+    }
+
     setStatus(
-      `Done. Sections: ${result.stats.sections}, images: ${result.stats.images}, notes: ${result.stats.notes}.`,
+      `Done. Files: ${convertedCount}, sections: ${totalSections}, images: ${totalImages}, notes: ${totalNotes}.`,
       "success",
     );
   } catch (error) {
@@ -106,16 +130,16 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-function setSelectedFile(file: File | null): void {
-  selectedFile = file;
-  if (!file) {
-    fileTitle.textContent = "Click to select an EPUB file";
+function setSelectedFiles(files: File[]): void {
+  selectedFiles = files;
+  if (files.length === 0) {
+    fileTitle.textContent = "Click to select EPUB files";
     fileSubtitle.textContent = "EPUB files processed locally in your browser";
     return;
   }
 
-  fileTitle.textContent = file.name;
-  fileSubtitle.textContent = `${formatBytes(file.size)} selected`;
+  fileTitle.textContent = formatSelectedFileNames(files);
+  fileSubtitle.textContent = `${files.length} ${plural(files.length, "file", "files")} selected, ${formatBytes(totalFileSize(files))} total`;
   setStatus("Ready.");
 }
 
@@ -766,6 +790,27 @@ function guessImageType(path: string): string {
 
 function stripExtension(name: string): string {
   return name.replace(/\.[^.]+$/, "");
+}
+
+function filesFromList(files: FileList | null): File[] {
+  return files ? [...files] : [];
+}
+
+function formatSelectedFileNames(files: File[]): string {
+  const visibleNames = files.slice(0, 2).map((file) => file.name);
+  if (files.length <= visibleNames.length) {
+    return visibleNames.join(", ");
+  }
+
+  return `${visibleNames.join(", ")} and ${files.length - visibleNames.length} more`;
+}
+
+function totalFileSize(files: File[]): number {
+  return files.reduce((total, file) => total + file.size, 0);
+}
+
+function plural(count: number, singular: string, pluralForm: string): string {
+  return count === 1 ? singular : pluralForm;
 }
 
 function formatBytes(bytes: number): string {
